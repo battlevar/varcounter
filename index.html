@@ -1,239 +1,141 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="sv">
 <head>
   <meta charset="UTF-8">
-  <title>Days Without Weed - soapvar</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r121/three.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/vanta@0.5.21/dist/vanta.fog.min.js"></script>
+  <title>30-dagars Måltidsplan</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
-
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      overflow: hidden;
-      font-family: 'Orbitron', sans-serif;
-      color: #fff;
-      text-align: center;
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Verdana, sans-serif;
+      background: #f0f2f5;
+      margin: 0; padding: 0;
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh;
     }
-
-    #content {
-      position: absolute;
-      width: 100%;
-      top: 50%;
-      transform: translateY(-50%);
-      z-index: 1;
-    }
-
-    h1 {
-      font-size: 3rem;
-      margin-bottom: 1rem;
-      animation: fadeInDown 1s ease-out;
-    }
-
-    #counter {
-      font-size: 2rem;
-      margin-bottom: 2rem;
-      animation: fadeInUp 1s ease-out;
-    }
-
-    #alphaMeterContainer {
+    .card {
+      background: #fff;
+      width: 360px; max-width: 90vw;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      padding: 1.5em;
       position: relative;
-      width: 200px;
-      height: 200px;
-      margin: 0 auto;
-      animation: fadeIn 2s ease-out;
     }
-
-    #alphaMeter {
-      width: 100%;
-      height: 100%;
+    h1 {
+      text-align: center;
+      margin: 0 0 0.5em;
+      font-size: 1.2em;
+      color: #333;
     }
-
-    #alphaLabel {
+    .nav-btn {
       position: absolute;
-      width: 100%;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 1.5rem;
-      color: #fff;
-    }
-
-    #resetSection {
-      margin-top: 2rem;
-      animation: fadeInUp 1.5s ease-out;
-    }
-
-    input {
-      padding: 0.5rem;
-      margin: 0.5rem 0;
+      top: 1.5em;
+      background: none;
       border: none;
-      border-radius: 5px;
-      font-size: 1rem;
-    }
-
-    button {
-      background: #4caf50;
-      color: #fff;
-      border: none;
-      padding: 0.5rem 1.5rem;
-      border-radius: 5px;
-      font-size: 1rem;
+      font-size: 1.5em;
       cursor: pointer;
-      transition: background 0.3s ease, transform 0.2s ease;
+      color: #888;
     }
-
-    button:hover {
-      background: #66ff66;
-      transform: scale(1.1);
+    #prevBtn { left: 1em; }
+    #nextBtn { right: 1em; }
+    .meal {
+      margin: 1em 0;
     }
-
-    button:active {
-      transform: scale(0.9);
+    .meal-icon { font-size: 1.4em; vertical-align: middle; }
+    .meal-title {
+      font-weight: bold;
+      margin: 0 0.2em;
+      vertical-align: middle;
     }
-
-    #errorMsg {
-      color: #ff4c4c;
-      margin-top: 0.5rem;
+    .meal-time { float: right; color: #666; }
+    .ingredients {
+      margin: 0.5em 0;
+      padding-left: 1em;
+      color: #555;
     }
-
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
+    .instructions {
+      font-style: italic;
+      text-align: center;
+      margin-top: 0.5em;
+      color: #444;
     }
-
-    @keyframes fadeInDown {
-      from {
-        opacity: 0;
-        transform: translateY(-20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+    .date-display {
+      text-align: center;
+      margin-top: 0.5em;
+      color: #555;
     }
   </style>
 </head>
 <body>
-  <div id="content">
-    <h1>Soapvar Days Without Weed</h1>
-    <div id="counter"></div>
-
-    <div id="alphaMeterContainer">
-      <canvas id="alphaMeter" width="200" height="200"></canvas>
-      <div id="alphaLabel"></div>
-    </div>
-
-    <div id="resetSection">
-      <input type="password" id="passwordInput" placeholder="Enter password to reset">
-      <button onclick="tryReset()">Reset Clock</button>
-      <p id="errorMsg"></p>
-    </div>
+  <div class="card">
+    <button id="prevBtn" class="nav-btn">&larr;</button>
+    <button id="nextBtn" class="nav-btn">&rarr;</button>
+    <h1 id="dayLabel">Dag X</h1>
+    <div id="mealsContainer"></div>
+    <div class="date-display" id="dateDisplay"></div>
   </div>
 
   <script>
-    VANTA.FOG({
-      el: "body",
-      highlightColor: 0x00ff00,
-      midtoneColor: 0x005500,
-      lowlightColor: 0x001100,
-      baseColor: 0x000000,
-      blurFactor: 0.5,
-      speed: 1.5,
-      zoom: 1.2
+    // Ladda JSON och initiera
+    let mealPlans = [];
+    let currentIndex = 0;
+
+    fetch('monthly_meal_plan.json')
+      .then(res => res.json())
+      .then(data => {
+        mealPlans = data;
+        initIndex();
+        render();
+      })
+      .catch(err => console.error('Kunde inte ladda JSON:', err));
+
+    function initIndex() {
+      const today = new Date().toISOString().slice(0,10);
+      const idx = mealPlans.findIndex(d => d.date === today);
+      currentIndex = idx >= 0 ? idx : 0;
+    }
+
+    document.getElementById('prevBtn').addEventListener('click', () => {
+      if (currentIndex > 0) currentIndex--;
+      render();
+    });
+    document.getElementById('nextBtn').addEventListener('click', () => {
+      if (currentIndex < mealPlans.length - 1) currentIndex++;
+      render();
     });
 
-    const PASSWORD = 'drugvar_failed';
-    const STORAGE_KEY = 'sobrietyStart';
-    const OFFSET_HOURS = 12; // Add 12 hours offset
+    function render() {
+      const day = mealPlans[currentIndex];
+      const date = new Date(day.date);
+      const dayNames = ['Söndag','Måndag','Tisdag','Onsdag','Torsdag','Fredag','Lördag'];
+      document.getElementById('dayLabel').textContent = dayNames[date.getDay()];
+      document.getElementById('dateDisplay').textContent = day.date;
 
-    function getStartDate() {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      let date = stored ? new Date(stored) : new Date("2025-03-29T00:00:00Z");
-      date = new Date(date.getTime() + OFFSET_HOURS * 60 * 60 * 1000);
-      return date;
+      const container = document.getElementById('mealsContainer');
+      container.innerHTML = ''; // töm
+      day.meals.forEach(meal => {
+        const div = document.createElement('div');
+        div.className = 'meal';
+        let emoji = '';
+        if (meal.name.toLowerCase().includes('lunch')) emoji = '🥗';
+        else if (meal.name.toLowerCase().includes('snack') || meal.name.toLowerCase().includes('mellanmål')) emoji = '🍎';
+        else emoji = '🍽️';
+
+        div.innerHTML = `
+          <span class="meal-icon">${emoji}</span>
+          <span class="meal-title">${meal.name}: ${meal.title}</span>
+          <span class="meal-time">${meal.time}</span>
+          <ul class="ingredients">
+            ${meal.ingredients.map(i => `<li>${i.amount} ${i.name}</li>`).join('')}
+          </ul>
+          <div class="instructions">${meal.instructions}</div>
+        `;
+        container.appendChild(div);
+      });
+
+      // Disable knappar i ändar
+      document.getElementById('prevBtn').disabled = (currentIndex === 0);
+      document.getElementById('nextBtn').disabled = (currentIndex === mealPlans.length - 1);
     }
-
-    function updateCounter() {
-      const now = new Date();
-      const start = getStartDate();
-      const diff = now - start;
-
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-      const minutes = Math.floor((diff / (1000 * 60)) % 60);
-      const seconds = Math.floor((diff / 1000) % 60);
-
-      document.getElementById('counter').textContent =
-        `${days} days and ${hours.toString().padStart(2, '0')}h:` +
-        `${minutes.toString().padStart(2, '0')}m:` +
-        `${seconds.toString().padStart(2, '0')}s`;
-
-      updateAlphaMeter(diff);
-    }
-
-    function tryReset() {
-      const input = document.getElementById('passwordInput').value;
-      const errorMsg = document.getElementById('errorMsg');
-      if (input === PASSWORD) {
-        const now = new Date();
-        localStorage.setItem(STORAGE_KEY, now.toISOString());
-        errorMsg.textContent = '';
-        updateCounter();
-      } else {
-        errorMsg.textContent = 'Incorrect password';
-      }
-    }
-
-    function updateAlphaMeter(diffMs) {
-      const maxMs = 30 * 24 * 60 * 60 * 1000;
-      let progress = Math.min(diffMs / maxMs, 1);
-      let percentage = (progress * 100).toFixed(2);
-
-      const canvas = document.getElementById('alphaMeter');
-      const ctx = canvas.getContext('2d');
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      const centerX = canvas.width / 2;
-      const centerY = canvas.height / 2;
-      const radius = 80;
-      const startAngle = -Math.PI;
-      const endAngle = startAngle + (Math.PI * progress);
-
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, radius, startAngle, Math.PI);
-      ctx.strokeStyle = '#444';
-      ctx.lineWidth = 15;
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, radius, startAngle, endAngle);
-      ctx.strokeStyle = '#00ff88';
-      ctx.lineWidth = 15;
-      ctx.stroke();
-
-      ctx.font = '20px Orbitron';
-      ctx.fillStyle = '#fff';
-      ctx.textAlign = 'center';
-      ctx.fillText(`${percentage}% ALPHA`, centerX, centerY + 7);
-
-      document.getElementById('alphaLabel').textContent = percentage >= 100 ? 'FULL ALPHA STATUS REACHED' : '';
-    }
-
-    updateCounter();
-    setInterval(updateCounter, 1000);
   </script>
 </body>
 </html>
