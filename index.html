@@ -297,7 +297,7 @@
   function camMatrixNoRoll(yaw,pitch){ const sx=Math.sin(yaw), cx=Math.cos(yaw); const sp=Math.sin(pitch), cp=Math.cos(pitch); const f=[ sx*cp, sp, cx*cp ]; const upw=[0,1,0]; const r=normalize(cross(upw,f)); const u=cross(f,r); return [ r[0],r[1],r[2], u[0],u[1],u[2], -f[0],-f[1],-f[2] ]; }
 
   let yaw=Math.PI*0.25, pitch=0.12, fov=60, turbo=0; let pos={x:0,y:1.2,z:6.0};
-  const keys=Object.create(null); let mouseLocked=false; let intensity=1.0;
+  const keys=Object.create(null); let mouseLocked=false; let intensity=0.2;
   const toggles = { shadow:1, ao:1, psycho:0, lens:1, post:1, chromab:1, trails:0, pauseOrbits:0, kaleido:0 };
 
   // Input
